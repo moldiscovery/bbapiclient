@@ -14,9 +14,9 @@ This script was almost copied from [ayush-sharma DevOps tools](https://github.co
 pip install -r requirements.txt 
 ```
 
-## Usage
+## Setup and Usage
 
- - Go to your Bitcket account settings -> OAuth -> Add Consumer 
+ - Go Bitbucket account settings -> OAuth -> Add Consumer 
 
 Set 
 

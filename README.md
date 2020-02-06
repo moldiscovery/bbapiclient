@@ -24,11 +24,13 @@ Set
  - Callback URL = https://localhost 
  - This is a Private consumer = True
 
-Once created take the account_id, key and secret and set the following environment variables in you shell:
+Once created take the account_id, key and secret and set the following variables in your environment:
 
+```
  - BB_ACCOUNT_ID
  - BB_OAUTH_ID
  - BB_OAUTH_SECRET
+```
 
 Now run the script: 
 

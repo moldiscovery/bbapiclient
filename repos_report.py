@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
          csv_file.write('git_remote , updated_on\n')
          for rname,rtime in ordered_repos:
-            csv_file.write(join("git@bitbucket.org:moldiscovery",rname) + " , " + rtime + '\n')
+            csv_file.write(join("git@bitbucket.org:"+c.account_id,rname) + " , " + rtime + '\n')
 
     print('> Repo report saved. (repos.csv)')
 

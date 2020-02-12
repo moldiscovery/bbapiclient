@@ -3,7 +3,7 @@
 # requires python >= 3 
 # usage example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py
 
-from requests_oauthlib import OAuth2Session
+
 from urllib.parse import urlencode
 from urllib.parse import parse_qs, urlsplit, urlunsplit
 import csv
@@ -12,33 +12,50 @@ import sys
 from os.path import join
 from os import environ 
 from datetime import datetime
+import click
+
+from BBclient import AuthClient
 
 
-class ClientSecrets:
+@click.command()
+@click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
+@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'set-readonly'], case_sensitive=False))
+def run(operation, filereport):
+    click.echo(operation)
 
-    client_id = None
-    client_secret = None
-    account_id = None
-    redirect_uris = [
-        'https://localhost'
-    ]
-    auth_uri = 'https://bitbucket.org/site/oauth2/authorize'
-    token_uri = 'https://bitbucket.org/site/oauth2/access_token'
-    server_base_uri = 'https://api.bitbucket.org/'
-        
+    ac = AuthClient()
+    ac.connect()
 
-    def check_env(self):
-        return environ.get('BB_ACCOUNT_ID') and environ.get('BB_OAUTH_ID') and environ.get('BB_OAUTH_SECRET')
+    if operation == "listrepos":
+        list_team_repos(ac, filereport)
 
 
-    def setup_from_env(self):
-        if not self.check_env():
-            print("You must set all the environment variables for the OAUTH to work")
-            sys.exit(1)
+def list_team_repos(client, filereport):
 
-        self.account_id = environ.get('BB_ACCOUNT_ID')
-        self.client_id = environ.get('BB_OAUTH_ID')
-        self.client_secret = environ.get('BB_OAUTH_SECRET')
+    repo_list = get_all_repos(
+        client.BBClient, next_page_url=client.server_base_uri + '2.0/repositories/' + client.account_id)
+
+    repo_data_map = {}
+
+    for repo in repo_list:
+        # I only consider a shortdate for 'updated_on' of format YYYY-MM-dd  
+        repo_data_map[repo['name']] = repo['updated_on'][:10]
+
+    # sort by date
+    ordered_repos = sorted(repo_data_map.items(), key = lambda item:datetime.strptime(item[1], '%Y-%m-%d'), reverse=True)
+
+    if filereport:
+        with open('repos.csv', 'w') as csv_file:
+
+            print('> Saving repos report to file...')
+
+            csv_file.write('git_remote , updated_on\n')
+            for rname,rtime in ordered_repos:
+                csv_file.write(join("git@bitbucket.org:"+client.account_id,rname) + " , " + rtime + '\n')
+
+        print('> Repo report saved. (repos.csv)')
+    else:
+        print(ordered_repos)
 
 
 def get_all_repos(BBClient, next_page_url):
@@ -137,47 +154,5 @@ def get_all_pipelines(BBClient, next_page_url):
 
 if __name__ == '__main__':
 
-    # Initialize Bitbucket secrets
-    c = ClientSecrets()
-    c.setup_from_env()
-
-    # Fetch a request token
-    BBClient = OAuth2Session(c.client_id)
-
-    # Redirect user to Bitbucket for authorization
-    authorization_url = BBClient.authorization_url(c.auth_uri)
-    print('Please go here and authorize: {}'.format(authorization_url[0]))
-
-    # Get the authorization verifier code from the callback url
-    redirect_response = input('Paste the full redirect URL here:')
-
-    # Fetch the access token
-    BBClient.fetch_token(
-        c.token_uri,
-        authorization_response=redirect_response,
-        username=c.client_id,
-        password=c.client_secret,
-        client_secret=c.client_secret)
-
-    repo_list = get_all_repos(
-        BBClient, next_page_url=c.server_base_uri + '2.0/repositories/' + c.account_id)
-
-    repo_data_map = {}
-
-    for repo in repo_list:
-        # I only consider a shortdate for 'updated_on' of format YYYY-MM-dd  
-        repo_data_map[repo['name']] = repo['updated_on'][:10]
-
-    # sort by date
-    ordered_repos = sorted(repo_data_map.items(), key = lambda item:datetime.strptime(item[1], '%Y-%m-%d'), reverse=True)
-
-    with open('repos.csv', 'w') as csv_file:
-
-         print('> Saving repos report to file...')
-
-         csv_file.write('git_remote , updated_on\n')
-         for rname,rtime in ordered_repos:
-            csv_file.write(join("git@bitbucket.org:"+c.account_id,rname) + " , " + rtime + '\n')
-
-    print('> Repo report saved. (repos.csv)')
+    run()
 

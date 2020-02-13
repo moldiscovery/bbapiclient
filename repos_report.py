@@ -6,6 +6,7 @@
 
 from urllib.parse import urlencode
 from urllib.parse import parse_qs, urlsplit, urlunsplit
+from requests.exceptions import HTTPError
 import csv
 import json
 import sys
@@ -16,11 +17,15 @@ import click
 
 from BBclient import AuthClient
 
+TEAM="moldiscovery"
 
 @click.command()
 @click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
-@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'set-readonly'], case_sensitive=False))
-def run(operation, filereport):
+@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions'], case_sensitive=False))
+@click.option("--repo", help="apply to a single repo", type=str, required=False)
+@click.option("--group", help="grant permissions for this group", type=str, required=True)
+@click.option("--grant", help="type of permission to grant", default='read', type=click.Choice(['read', 'write'], case_sensitive=False))
+def run(operation, filereport, repo, group, grant):
     click.echo(operation)
 
     ac = AuthClient()
@@ -28,6 +33,20 @@ def run(operation, filereport):
 
     if operation == "listrepos":
         list_team_repos(ac, filereport)
+    if operation == "permissions":
+        if group:
+            if repo:
+                setGroupPermissions(ac, group, repo, grant)
+            else:
+                repos = listgroup_repos(ac, group)
+                for repo in repos: 
+                    print("set", group, TEAM, repo, grant)
+                    setGroupPermissions(ac, group, repo, grant)                    
+
+
+def error(msg):
+    click.ClickException(msg).show()
+    sys.exit(1)
 
 
 def list_team_repos(client, filereport):
@@ -56,6 +75,53 @@ def list_team_repos(client, filereport):
         print('> Repo report saved. (repos.csv)')
     else:
         print(ordered_repos)
+
+
+def listgroup_repos(client, group):
+
+    try:
+
+        out = []
+        response = client.BBClient.get(join("https://bitbucket.org/api/1.0/group-privileges",TEAM,TEAM,group))
+        
+        if response.status_code != 200:
+            error("API Request error, code {}".format(response.status_code))
+            
+        body = json.loads(response.content)
+
+        for item in body:
+            out.append(item['repo'].split('/')[-1])
+
+        return out
+
+    except HTTPError:
+        error("BB Endpoint request error")
+
+
+# use API v1.0 cause this feature is deprecated on 2.0 
+# https://developer.atlassian.com/cloud/bitbucket/deprecation-notice-v1-apis/?_ga=2.232592733.337263193.1581505695-823020582.1566895316
+# I'm starting from this page: https://confluence.atlassian.com/bitbucket/group-privileges-endpoint-296093137.html
+def setGroupPermissions(client, group, repo, grant):
+
+    # list users of a group: https://bitbucket.org/api/2.0/groups/{teamname}
+    # repos info for a group : https://bitbucket.org/api/1.0/group-privileges/{teamname}/{groupowner}/{groupnameslug}
+    #response = client.BBClient.get("https://bitbucket.org/api/1.0/group-privileges/moldiscovery/moldiscovery/test")
+
+    # get repo https://bitbucket.org/api/1.0/group-privileges/{teamname}/{reposlug}/{groupowner}/{groupnameslug}
+    #response = client.BBClient.get("https://bitbucket.org/api/1.0/group-privileges/moldiscovery/testrepo/moldiscovery/test")
+
+
+    try: 
+        # change repo perm: PUT https://api.bitbucket.org/1.0/group-privileges/{workspace_id}/{repo_slug}/{group_owner}/{group_slug} data=['read'|'write'|admin']
+        response = client.BBClient.put(join("https://bitbucket.org/api/1.0/group-privileges/",TEAM,repo,TEAM,group), data=grant)
+
+        if response.status_code != 200:
+            error("API Request error, code {}".format(response.status_code))
+        
+        print("OK")
+
+    except HTTPError:
+        error("BB Endpoint request error")
 
 
 def get_all_repos(BBClient, next_page_url):

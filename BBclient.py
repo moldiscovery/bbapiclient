@@ -2,6 +2,7 @@ from requests_oauthlib import OAuth2Session
 from os import environ
 import sys
 
+
 class AuthClient:
 
     client_id = None
@@ -29,6 +30,7 @@ class AuthClient:
         self.client_id = environ.get('BB_OAUTH_ID')
         self.client_secret = environ.get('BB_OAUTH_SECRET')
 
+
     def connect(self):
 
         # set secrets
@@ -39,7 +41,9 @@ class AuthClient:
 
         # Redirect user to Bitbucket for authorization
         authorization_url = self.BBClient.authorization_url(self.auth_uri)
+        
         print('Please go here and authorize: {}'.format(authorization_url[0]))
+        #self.openurl(authorization_url[0])
 
         # Get the authorization verifier code from the callback url
         redirect_response = input('Paste the full redirect URL here:')
@@ -51,3 +55,4 @@ class AuthClient:
             username=self.client_id,
             password=self.client_secret,
             client_secret=self.client_secret)
+

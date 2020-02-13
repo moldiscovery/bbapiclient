@@ -21,6 +21,7 @@ pip install -r requirements.txt
 Set 
 
  - Repositories = Read
+ - Account = Write
  - Callback URL = https://localhost 
  - This is a Private consumer = True
 

@@ -1,7 +1,14 @@
 # article: https://dev.to/ayushsharma/exporting-bitucket-repositories-and-pipelines-with-python-3h5o
 # code from: https://github.com/ayush-sharma/infra_helpers/blob/master/bitbucket/report_repos_pipelines.py
 # requires python >= 3 
-# usage example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py
+#
+# list repos example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py --operation listrepos --filereport 
+#
+# set repo permission example: 
+# BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py  --operation permissions --group foo --grant read
+#
+# set repos permission example: 
+# BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py  --operation permissions --group foo --repo bar --grant read
 
 # SOME QUERIES 
 # list users of a group: https://bitbucket.org/api/2.0/groups/{teamname}
@@ -27,11 +34,12 @@ from BBclient import AuthClient
 
 TEAM="moldiscovery"
 
+# TODO user click groups to configure subcommands menu
 @click.command()
 @click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
 @click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions'], case_sensitive=False))
 @click.option("--repo", help="apply to a single repo", type=str, required=False)
-@click.option("--group", help="grant permissions for this group", type=str, required=True)
+@click.option("--group", help="grant permissions for this group", type=str, required=False)
 @click.option("--grant", help="type of permission to grant", default='read', type=click.Choice(['read', 'write'], case_sensitive=False))
 def run(operation, filereport, repo, group, grant):
     click.echo(operation)
@@ -40,12 +48,14 @@ def run(operation, filereport, repo, group, grant):
     ac.connect()
 
     if operation == "listrepos":
+        print("Options: group, grant, repo skipped")
         list_team_repos(ac, filereport)
     if operation == "permissions":
         if group:
             if repo:
                 answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
                 if 'yes' in answer: 
+                    print("run on repo {}".format(repo))
                     setRepoGroupPermissions(ac, group, repo, grant)
             else:
                 # Single request doesn't not work as expected so I need to iterate over the group repos

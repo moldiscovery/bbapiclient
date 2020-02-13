@@ -3,6 +3,14 @@
 # requires python >= 3 
 # usage example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py
 
+# SOME QUERIES 
+# list users of a group: https://bitbucket.org/api/2.0/groups/{teamname}
+# repos info for a group : https://bitbucket.org/api/1.0/group-privileges/{teamname}/{groupowner}/{groupnameslug}
+#response = client.BBClient.get("https://bitbucket.org/api/1.0/group-privileges/moldiscovery/moldiscovery/test")
+
+# get repo https://bitbucket.org/api/1.0/group-privileges/{teamname}/{reposlug}/{groupowner}/{groupnameslug}
+#response = client.BBClient.get("https://bitbucket.org/api/1.0/group-privileges/moldiscovery/testrepo/moldiscovery/test")
+
 
 from urllib.parse import urlencode
 from urllib.parse import parse_qs, urlsplit, urlunsplit
@@ -36,12 +44,17 @@ def run(operation, filereport, repo, group, grant):
     if operation == "permissions":
         if group:
             if repo:
-                setGroupPermissions(ac, group, repo, grant)
+                answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
+                if 'yes' in answer: 
+                    setRepoGroupPermissions(ac, group, repo, grant)
             else:
-                repos = listgroup_repos(ac, group)
-                for repo in repos: 
-                    print("set", group, TEAM, repo, grant)
-                    setGroupPermissions(ac, group, repo, grant)                    
+                # Single request doesn't not work as expected so I need to iterate over the group repos
+                answer = input("This command will change/create the group '{}' with permission '{}', are you sure? yes/no    ".format(group, grant))
+                if 'yes' in answer: 
+                    repos = listgroup_repos(ac, group)
+                    for repo in repos: 
+                        print("run on repo {}".format(repo))
+                        setRepoGroupPermissions(ac, group, repo, grant)
 
 
 def error(msg):
@@ -80,7 +93,6 @@ def list_team_repos(client, filereport):
 def listgroup_repos(client, group):
 
     try:
-
         out = []
         response = client.BBClient.get(join("https://bitbucket.org/api/1.0/group-privileges",TEAM,TEAM,group))
         
@@ -101,15 +113,7 @@ def listgroup_repos(client, group):
 # use API v1.0 cause this feature is deprecated on 2.0 
 # https://developer.atlassian.com/cloud/bitbucket/deprecation-notice-v1-apis/?_ga=2.232592733.337263193.1581505695-823020582.1566895316
 # I'm starting from this page: https://confluence.atlassian.com/bitbucket/group-privileges-endpoint-296093137.html
-def setGroupPermissions(client, group, repo, grant):
-
-    # list users of a group: https://bitbucket.org/api/2.0/groups/{teamname}
-    # repos info for a group : https://bitbucket.org/api/1.0/group-privileges/{teamname}/{groupowner}/{groupnameslug}
-    #response = client.BBClient.get("https://bitbucket.org/api/1.0/group-privileges/moldiscovery/moldiscovery/test")
-
-    # get repo https://bitbucket.org/api/1.0/group-privileges/{teamname}/{reposlug}/{groupowner}/{groupnameslug}
-    #response = client.BBClient.get("https://bitbucket.org/api/1.0/group-privileges/moldiscovery/testrepo/moldiscovery/test")
-
+def setRepoGroupPermissions(client, group, repo, grant):
 
     try: 
         # change repo perm: PUT https://api.bitbucket.org/1.0/group-privileges/{workspace_id}/{repo_slug}/{group_owner}/{group_slug} data=['read'|'write'|admin']
@@ -118,10 +122,26 @@ def setGroupPermissions(client, group, repo, grant):
         if response.status_code != 200:
             error("API Request error, code {}".format(response.status_code))
         
-        print("OK")
+        print("Completed")
 
     except HTTPError:
         error("BB Endpoint request error")
+
+# TODO FIX , this set permissions on all repos, expected behaviour is to apply to the group repos  
+# def setGroupPermissions(client, group, grant):
+
+#     try: 
+#         # change repo perm: PUT https://api.bitbucket.org/1.0/group-privileges/{workspace_id}/{repo_slug}/{group_owner}/{group_slug} data=['read'|'write'|admin']
+#         response = client.BBClient.put(join("https://api.bitbucket.org/1.0/group-privileges",TEAM,TEAM,group), data=grant)
+
+#         if response.status_code != 200:
+#             error("API Request error, code {}".format(response.status_code))
+        
+#         print(response.content)
+#         print("Completed")
+
+#     except HTTPError:
+#        error("BB Endpoint request error")
 
 
 def get_all_repos(BBClient, next_page_url):
@@ -135,7 +155,6 @@ def get_all_repos(BBClient, next_page_url):
         response_dict = json.loads(response.content)
 
     except Exception as e:
-
         print(str(e))
 
     if 'values' in response_dict:

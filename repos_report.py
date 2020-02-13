@@ -32,7 +32,8 @@ import click
 
 from BBclient import AuthClient
 
-TEAM="moldiscovery"
+# put here you team or account id 
+TEAM="your_account_id"
 
 # TODO user click groups to configure subcommands menu
 @click.command()

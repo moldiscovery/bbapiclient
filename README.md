@@ -16,7 +16,8 @@ pip install -r requirements.txt
 
 ## Setup and Usage
 
- - Go Bitbucket account settings -> OAuth -> Add Consumer 
+ - Go Bitbucket account settings -> OAuth -> Add Consumer
+ - In repos_report.py set `TEAM="your_account_id"` with your team or account id 
 
 Set 
 

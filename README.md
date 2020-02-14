@@ -17,8 +17,7 @@ pip install -r requirements.txt
 ## Setup and Usage
 
  - Go Bitbucket account settings -> OAuth -> Add Consumer
- - In repos_report.py set `TEAM="your_account_id"` with your team or account id 
-
+ 
 Set 
 
  - Repositories = Read
@@ -43,12 +42,12 @@ Some tips on usage:
 
 List repos 
 
-	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py --operation listrepos --filereport 
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py --operation listrepos --filereport 
 
 Set repo permission: 
 
-	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py  --operation permissions --group foo --grant read
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --grant read
 
 Set repos permission example: 
 
-	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py  --operation permissions --group foo --repo bar --grant read
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --repo bar --grant read

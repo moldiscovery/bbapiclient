@@ -2,13 +2,13 @@
 # code from: https://github.com/ayush-sharma/infra_helpers/blob/master/bitbucket/report_repos_pipelines.py
 # requires python >= 3 
 #
-# list repos example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py --operation listrepos --filereport 
+# list repos example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py --operation listrepos --filereport 
 #
 # set repo permission example: 
-# BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py  --operation permissions --group foo --grant read
+# BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --grant read
 #
 # set repos permission example: 
-# BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python repos_report.py  --operation permissions --group foo --repo bar --grant read
+# BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --repo bar --grant read
 
 # SOME QUERIES 
 # list users of a group: https://bitbucket.org/api/2.0/groups/{teamname}
@@ -31,9 +31,6 @@ from datetime import datetime
 import click
 
 from BBclient import AuthClient
-
-# put here you team or account id 
-TEAM="your_account_id"
 
 # TODO user click groups to configure subcommands menu
 @click.command()
@@ -105,7 +102,7 @@ def listgroup_repos(client, group):
 
     try:
         out = []
-        response = client.BBClient.get(join("https://bitbucket.org/api/1.0/group-privileges",TEAM,TEAM,group))
+        response = client.BBClient.get(join("https://bitbucket.org/api/1.0/group-privileges",client.account_id,client.account_id,group))
         
         if response.status_code != 200:
             error("API Request error, code {}".format(response.status_code))
@@ -128,7 +125,7 @@ def setRepoGroupPermissions(client, group, repo, grant):
 
     try: 
         # change repo perm: PUT https://api.bitbucket.org/1.0/group-privileges/{workspace_id}/{repo_slug}/{group_owner}/{group_slug} data=['read'|'write'|admin']
-        response = client.BBClient.put(join("https://bitbucket.org/api/1.0/group-privileges/",TEAM,repo,TEAM,group), data=grant)
+        response = client.BBClient.put(join("https://bitbucket.org/api/1.0/group-privileges/",client.account_id,repo,client.account_id,group), data=grant)
 
         if response.status_code != 200:
             error("API Request error, code {}".format(response.status_code))

@@ -44,10 +44,25 @@ List repos
 
 	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py --operation listrepos --filereport 
 
-Set repo permission: 
+Get group info: 
+
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation groupinfo --group fooDe
+
+Set all repos permission ( IMPORTANT: if no group exist in the repos it will be created ): 
 
 	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --grant read
 
-Set repos permission example: 
+Set repo permission example: 
 
 	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --repo bar --grant read
+
+# Migration Operations 
+
+Collect backup infos for each group with
+
+	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation groupinfo --group groupname1  --filereport
+	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation groupinfo --group groupname2  --filereport
+	$ .. 
+
+Named report files will be created on the current dir
+

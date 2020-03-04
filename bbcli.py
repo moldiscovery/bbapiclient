@@ -35,7 +35,7 @@ from BBclient import AuthClient
 # TODO user click groups to configure subcommands menu
 @click.command()
 @click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
-@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions'], case_sensitive=False))
+@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions', 'groupinfo'], case_sensitive=False))
 @click.option("--repo", help="apply to a single repo", type=str, required=False)
 @click.option("--group", help="grant permissions for this group", type=str, required=False)
 @click.option("--grant", help="type of permission to grant", default='read', type=click.Choice(['read', 'write'], case_sensitive=False))
@@ -50,19 +50,22 @@ def run(operation, filereport, repo, group, grant):
         list_team_repos(ac, filereport)
     if operation == "permissions":
         if group:
+            
             if repo:
                 answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
                 if 'yes' in answer: 
                     print("run on repo {}".format(repo))
-                    setRepoGroupPermissions(ac, group, repo, grant)
+                    setRepoGroupPermissions(ac, group.lower(), repo, grant)
             else:
                 # Single request doesn't not work as expected so I need to iterate over the group repos
                 answer = input("This command will change/create the group '{}' with permission '{}', are you sure? yes/no    ".format(group, grant))
                 if 'yes' in answer: 
-                    repos = listgroup_repos(ac, group)
+                    repos = listgroup_repos(ac, group.lower())
                     for repo in repos: 
                         print("run on repo {}".format(repo))
-                        setRepoGroupPermissions(ac, group, repo, grant)
+                        setRepoGroupPermissions(ac, group.lower(), repo, grant)
+    if operation == 'groupinfo':
+        group_info(ac, group.lower(), filereport)
 
 
 def error(msg):
@@ -96,6 +99,41 @@ def list_team_repos(client, filereport):
         print('> Repo report saved. (repos.csv)')
     else:
         print(ordered_repos)
+
+
+def group_info(client, group, filereport):
+
+    try:
+        out = []
+        response = client.BBClient.get(join("https://bitbucket.org/api/1.0/group-privileges",client.account_id,client.account_id,group))
+        
+        if response.status_code != 200:
+            error("API Request error, code {}".format(response.status_code))
+            
+        body = json.loads(response.content)
+
+        if filereport:
+            targetfile = "group_{0}_info.csv".format(group) 
+            with open(targetfile, 'w') as csv_file:
+
+                print('> Saving groupinfo report to file...')
+
+                csv_file.write('group , permission\n')
+                for item in body:
+                    csv_file.write(item['repo'].split('/')[-1] + ", " + item['privilege'] + '\n')
+
+                print("> Repo report saved. (%s)" % targetfile)
+        else:
+            for item in body:
+                out.append(item['repo'].split('/')[-1] + ", " + item['privilege'])
+
+            print(out)
+            
+
+        return out
+
+    except HTTPError:
+        error("BB Endpoint request error")
 
 
 def listgroup_repos(client, group):

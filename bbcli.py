@@ -1,6 +1,7 @@
 # Inspired by:
 # article: https://dev.to/ayushsharma/exporting-bitucket-repositories-and-pipelines-with-python-3h5o
 # code from: https://github.com/ayush-sharma/infra_helpers/blob/master/bitbucket/report_repos_pipelines.py
+# BB API 1.0 reference: https://confluence.atlassian.com/bitbucket/version-1-423626337.html
 #
 # list repos example: BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py --operation listrepos --filereport 
 #
@@ -35,11 +36,12 @@ from BBclient import AuthClient
 # TODO user click groups to configure subcommands menu
 @click.command()
 @click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
-@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions', 'groupinfo'], case_sensitive=False))
+@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions', 'groupinfo', 'userinfo'], case_sensitive=False))
 @click.option("--repo", help="apply to a single repo", type=str, required=False)
 @click.option("--group", help="grant permissions for this group", type=str, required=False)
+@click.option("--user", help="user id", type=str, required=False)
 @click.option("--grant", help="type of permission to grant", default='read', type=click.Choice(['read', 'write'], case_sensitive=False))
-def run(operation, filereport, repo, group, grant):
+def run(operation, filereport, repo, user, group, grant):
     click.echo(operation)
 
     ac = AuthClient()
@@ -66,7 +68,9 @@ def run(operation, filereport, repo, group, grant):
                         setRepoGroupPermissions(ac, group.lower(), repo, grant)
     if operation == 'groupinfo':
         group_info(ac, group.lower(), filereport)
-
+    if user and operation == 'userinfo':
+        user_info(ac, user, filereport)
+    
 
 def error(msg):
     click.ClickException(msg).show()
@@ -75,7 +79,7 @@ def error(msg):
 
 def list_team_repos(client, filereport):
 
-    repo_list = get_all_repos(
+    repo_list = get_repo_page(
         client.BBClient, next_page_url=client.server_base_uri + '2.0/repositories/' + client.account_id)
 
     repo_data_map = {}
@@ -99,6 +103,34 @@ def list_team_repos(client, filereport):
         print('> Repo report saved. (repos.csv)')
     else:
         print(ordered_repos)
+
+# only works for the caller user id
+def user_info(client, user, filereport):
+        out = []
+        response = client.BBClient.get("https://api.bitbucket.org/2.0/users/{0}/repositories".format(user))
+        
+        if response.status_code != 200:
+            error("API Request error, code {}".format(response.status_code))
+            
+        body = json.loads(response.content)
+
+        if filereport:
+            targetfile = "group_{0}_info.csv".format(group) 
+            with open(targetfile, 'w') as csv_file:
+
+                print('> Saving groupinfo report to file...')
+
+                csv_file.write('group , permission\n')
+                for item in body:
+                    csv_file.write(item['repo'].split('/')[-1] + ", " + item['privilege'] + '\n')
+
+                print("> Repo report saved. (%s)" % targetfile)
+        else:
+            print(body)
+            
+
+        return out
+
 
 
 def group_info(client, group, filereport):
@@ -190,7 +222,7 @@ def setRepoGroupPermissions(client, group, repo, grant):
 #        error("BB Endpoint request error")
 
 
-def get_all_repos(BBClient, next_page_url):
+def get_repo_page(BBClient, next_page_url):
 
     data = []
 
@@ -220,7 +252,7 @@ def get_all_repos(BBClient, next_page_url):
 
     if 'next' in response_dict:
 
-        data += get_all_repos(BBClient=BBClient,
+        data += get_repo_page(BBClient=BBClient,
                               next_page_url=response_dict['next'])
 
     return data

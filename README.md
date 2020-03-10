@@ -46,7 +46,7 @@ List repos
 
 Get group info: 
 
-	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation groupinfo --group fooDe
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation groupinfo --group foode
 
 Set all repos permission ( IMPORTANT: if no group exist in the repos it will be created ): 
 
@@ -64,5 +64,19 @@ Collect backup infos for each group with
 	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation groupinfo --group groupname2  --filereport
 	$ .. 
 
-Named report files will be created on the current dir
+Named report files will be created on the execution dir.
 
+We're now ready to run for each users group ( few so it's not automatic ) this command: 
+
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --grant read
+	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group bar --grant read
+	..
+
+At the end all groups will have raed-only access to their repos 
+
+## ISSUES
+
+Due to the lack of endpoints in BB API1.0 and 2.0 it's not possibile to change user permissions over repoistories, this must be done manually or just do 
+not give user specific permissions on repos, use groups for any user and you'll be fine
+
+ 

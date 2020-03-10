@@ -64,7 +64,7 @@ Collect backup infos for each group with
 	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation groupinfo --group groupname2  --filereport
 	$ .. 
 
-Named report files will be created on the execution dir.
+Named report files will be created on the execution with format `group_groupname_info.csv` .
 
 We're now ready to run for each users group ( few so it's not automatic ) this command: 
 
@@ -73,6 +73,12 @@ We're now ready to run for each users group ( few so it's not automatic ) this c
 	..
 
 At the end all groups will have raed-only access to their repos 
+
+# Fail Back to previous group permissions
+
+It is possible to restore the group permissions as before the migration by issuing
+
+	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation restoregroupsgrant --group test --backupfilepath pathto/group_groupname_info.csv
 
 ## ISSUES
 

@@ -1,4 +1,4 @@
-group , permission
+repo,permission
 grid_ui, read
 webmetabase, read
 peakdetect, read

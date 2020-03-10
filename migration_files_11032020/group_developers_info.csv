@@ -1,4 +1,4 @@
-group , permission
+repo,permission
 grid_ui, write
 webmetabase, write
 peakdetect, write

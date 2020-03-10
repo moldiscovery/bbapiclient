@@ -26,7 +26,7 @@ from requests.exceptions import HTTPError
 import csv
 import json
 import sys
-from os.path import join
+from os.path import join, exists
 from os import environ 
 from datetime import datetime
 import click
@@ -36,30 +36,34 @@ from BBclient import AuthClient
 # TODO user click groups to configure subcommands menu
 @click.command()
 @click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
-@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions', 'groupinfo', 'userinfo'], case_sensitive=False))
+@click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions', 'groupinfo', 'userinfo', 'restoregroupsgrant'], case_sensitive=False))
 @click.option("--repo", help="apply to a single repo", type=str, required=False)
 @click.option("--group", help="grant permissions for this group", type=str, required=False)
 @click.option("--user", help="user id", type=str, required=False)
 @click.option("--grant", help="type of permission to grant", default='read', type=click.Choice(['read', 'write'], case_sensitive=False))
-def run(operation, filereport, repo, user, group, grant):
+@click.option("--backupfilepath", help="file containing the backed up user permission", type=str, required=False)
+def run(operation, filereport, repo, user, group, grant, backupfilepath):
     click.echo(operation)
 
     ac = AuthClient()
-    ac.connect()
+    #ac.connect()
 
     if operation == "listrepos":
         print("Options: group, grant, repo skipped")
+        ac.connect()
         list_team_repos(ac, filereport)
     if operation == "permissions":
         if group:
             
             if repo:
+                ac.connect()
                 answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
                 if 'yes' in answer: 
                     print("run on repo {}".format(repo))
                     setRepoGroupPermissions(ac, group.lower(), repo, grant)
             else:
                 # Single request doesn't not work as expected so I need to iterate over the group repos
+                ac.connect()
                 answer = input("This command will change/create the group '{}' with permission '{}', are you sure? yes/no    ".format(group, grant))
                 if 'yes' in answer: 
                     repos = listgroup_repos(ac, group.lower())
@@ -67,10 +71,27 @@ def run(operation, filereport, repo, user, group, grant):
                         print("run on repo {}".format(repo))
                         setRepoGroupPermissions(ac, group.lower(), repo, grant)
     if operation == 'groupinfo':
+        ac.connect()
         group_info(ac, group.lower(), filereport)
     if user and operation == 'userinfo':
+        ac.connect()
         user_info(ac, user, filereport)
-    
+    if operation == 'restoregroupsgrant':
+        if not group:
+            error("missing group name")
+        if backupfilepath and exists(backupfilepath):
+            ac.connect()
+            with open(backupfilepath, 'r') as backup:
+                reader = csv.DictReader(backup)
+                for item in reader:
+                    s_repo = item['repo'].strip()
+                    s_grant = item['permission'].strip()
+                    print("set {1} on repo {0}".format(s_repo, s_grant))
+                    setRepoGroupPermissions(ac, group.lower(), s_repo, s_grant)
+        else:
+            error("wrong backup file")
+
+
 
 def error(msg):
     click.ClickException(msg).show()
@@ -150,9 +171,9 @@ def group_info(client, group, filereport):
 
                 print('> Saving groupinfo report to file...')
 
-                csv_file.write('group , permission\n')
+                csv_file.write('repo,permission\n')
                 for item in body:
-                    csv_file.write(item['repo'].split('/')[-1] + ", " + item['privilege'] + '\n')
+                    csv_file.write(item['repo'].split('/')[-1] + "," + item['privilege'] + '\n')
 
                 print("> Repo report saved. (%s)" % targetfile)
         else:

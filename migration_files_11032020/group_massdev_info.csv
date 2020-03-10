@@ -1,4 +1,4 @@
-group , permission
+repo,permission
 libmspec, read
 testpermigrazione, read
 dementor, read

@@ -78,7 +78,7 @@ At the end all groups will have raed-only access to their repos
 
 It is possible to restore the group permissions as before the migration by issuing
 
-	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation restoregroupsgrant --group test --backupfilepath pathto/group_groupname_info.csv
+	$ BB_ACCOUNT_ID=moldiscovery BB_OAUTH_ID={key} BB_OAUTH_SECRET={secret} python bbcli.py --operation restoregroupsgrant --group groupname --backupfilepath pathto/group_groupname_info.csv
 
 ## ISSUES
 

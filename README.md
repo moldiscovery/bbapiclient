@@ -50,7 +50,7 @@ Get group info:
 
 Set all repos permission ( IMPORTANT: if no group exist in the repos it will be created ): 
 
-	$ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --group foo --grant read
+        $ BB_ACCOUNT_ID=id BB_OAUTH_ID=key BB_OAUTH_SECRET=secret python bbcli.py  --operation permissions --repoall --group foo  --grant read
 
 Set repo permission example: 
 

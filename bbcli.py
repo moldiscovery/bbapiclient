@@ -35,6 +35,7 @@ from BBclient import AuthClient
 
 # TODO user click groups to configure subcommands menu
 @click.command()
+@click.option('--repoall/--no-repoall', default=False)
 @click.option("--filereport/--no-filereport", help="Report to file", default=False, required=False)
 @click.option("--operation", help="Operation choose: list_repos, ", type=click.Choice(['listrepos', 'permissions', 'groupinfo', 'userinfo', 'restoregroupsgrant'], case_sensitive=False))
 @click.option("--repo", help="apply to a single repo", type=str, required=False)
@@ -42,7 +43,7 @@ from BBclient import AuthClient
 @click.option("--user", help="user id", type=str, required=False)
 @click.option("--grant", help="type of permission to grant", default='read', type=click.Choice(['read', 'write'], case_sensitive=False))
 @click.option("--backupfilepath", help="file containing the backed up user permission", type=str, required=False)
-def run(operation, filereport, repo, user, group, grant, backupfilepath):
+def run(operation, filereport, repo, user, group, grant, backupfilepath, repoall):
     click.echo(operation)
 
     ac = AuthClient()
@@ -55,21 +56,31 @@ def run(operation, filereport, repo, user, group, grant, backupfilepath):
     if operation == "permissions":
         if group:
             
-            if repo:
-                ac.connect()
-                answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
-                if 'yes' in answer: 
-                    print("run on repo {}".format(repo))
-                    setRepoGroupPermissions(ac, group.lower(), repo, grant)
+            if repoall:
+                    if group and grant:
+                        print("update/create group permission on all repos")
+                        ac.connect()
+                        repos = list_team_repos(ac,None)
+                        for repo in repos:
+                            if repo[0] != "PAInS filter":
+                                print("set/create group: %s permission: %s on repo: %s" % (group, grant, repo[0]))
+                                setRepoGroupPermissions(ac, group.lower(), repo[0], grant)
             else:
-                # Single request doesn't not work as expected so I need to iterate over the group repos
-                ac.connect()
-                answer = input("This command will change/create the group '{}' with permission '{}', are you sure? yes/no    ".format(group, grant))
-                if 'yes' in answer: 
-                    repos = listgroup_repos(ac, group.lower())
-                    for repo in repos: 
+                if repo:
+                    ac.connect()
+                    answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
+                    if 'yes' in answer: 
                         print("run on repo {}".format(repo))
-                        setRepoGroupPermissions(ac, group.lower(), repo, grant)
+                        #setRepoGroupPermissions(ac, group.lower(), repo, grant)
+                else:
+                    # Single request doesn't not work as expected so I need to iterate over the group repos
+                    ac.connect()
+                    answer = input("This command will change/create the group '{}' with permission '{}', are you sure? yes/no    ".format(group, grant))
+                    if 'yes' in answer: 
+                        repos = listgroup_repos(ac, group.lower())
+                        for repo in repos: 
+                            print("run on repo {}".format(repo))
+                            #setRepoGroupPermissions(ac, group.lower(), repo, grant)
     if operation == 'groupinfo':
         ac.connect()
         group_info(ac, group.lower(), filereport)
@@ -87,7 +98,7 @@ def run(operation, filereport, repo, user, group, grant, backupfilepath):
                     s_repo = item['repo'].strip()
                     s_grant = item['permission'].strip()
                     print("set {1} on repo {0}".format(s_repo, s_grant))
-                    setRepoGroupPermissions(ac, group.lower(), s_repo, s_grant)
+                    #setRepoGroupPermissions(ac, group.lower(), s_repo, s_grant)
         else:
             error("wrong backup file")
 
@@ -122,8 +133,10 @@ def list_team_repos(client, filereport):
                 csv_file.write(join("git@bitbucket.org:"+client.account_id,rname) + " , " + rtime + '\n')
 
         print('> Repo report saved. (repos.csv)')
-    else:
-        print(ordered_repos)
+    #else:
+    #    print(ordered_repos)
+    
+    return ordered_repos
 
 # only works for the caller user id
 def user_info(client, user, filereport):

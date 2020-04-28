@@ -1,0 +1,14 @@
+masschemsite	fabien
+masslipid	riccardo di guida
+massmetasite    fabien
+msfile-converter	fabien
+taut_devel	loriano
+webmetabase	luca
+peakdetect	fabien
+waters_sdk	fabien
+flap3		gabo
+lipostar_rules	ptiberi
+unificonnect	fabien
+volsurf3	giulia sorbi
+openglunderqml	gabo
+libbastatpp	gabo

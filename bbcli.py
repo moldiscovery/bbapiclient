@@ -71,7 +71,7 @@ def run(operation, filereport, repo, user, group, grant, backupfilepath, repoall
                     answer = input("This command will change/create the group '{}' with permission '{}' for repo '{}', are you sure? yes/no    ".format(group, grant,repo))
                     if 'yes' in answer: 
                         print("run on repo {}".format(repo))
-                        #setRepoGroupPermissions(ac, group.lower(), repo, grant)
+                        setRepoGroupPermissions(ac, group.lower(), repo, grant)
                 else:
                     # Single request doesn't not work as expected so I need to iterate over the group repos
                     ac.connect()
@@ -80,7 +80,7 @@ def run(operation, filereport, repo, user, group, grant, backupfilepath, repoall
                         repos = listgroup_repos(ac, group.lower())
                         for repo in repos: 
                             print("run on repo {}".format(repo))
-                            #setRepoGroupPermissions(ac, group.lower(), repo, grant)
+                            setRepoGroupPermissions(ac, group.lower(), repo, grant)
     if operation == 'groupinfo':
         ac.connect()
         group_info(ac, group.lower(), filereport)
@@ -98,7 +98,7 @@ def run(operation, filereport, repo, user, group, grant, backupfilepath, repoall
                     s_repo = item['repo'].strip()
                     s_grant = item['permission'].strip()
                     print("set {1} on repo {0}".format(s_repo, s_grant))
-                    #setRepoGroupPermissions(ac, group.lower(), s_repo, s_grant)
+                    setRepoGroupPermissions(ac, group.lower(), s_repo, s_grant)
         else:
             error("wrong backup file")
 
